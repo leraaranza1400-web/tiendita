@@ -6,9 +6,26 @@ if (!isset($_SESSION['usuario'])) {
 }
 include("conexion.php");
 
-$id = $_GET['id'];
-$result = $conexion->query("SELECT * FROM productos WHERE id=$id");
+// FIX: intval() para evitar SQL injection en el GET
+$id = intval($_GET['id'] ?? 0);
+
+if($id <= 0) {
+    header("Location: dashboard.php");
+    exit();
+}
+
+// FIX: prepared statement en lugar de query directa
+$stmt = $conexion->prepare("SELECT * FROM productos WHERE id = ?");
+$stmt->bind_param("i", $id);
+$stmt->execute();
+$result = $stmt->get_result();
 $row = $result->fetch_assoc();
+$stmt->close();
+
+if(!$row) {
+    header("Location: dashboard.php");
+    exit();
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -17,11 +34,7 @@ $row = $result->fetch_assoc();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Editar Producto</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -42,27 +55,17 @@ $row = $result->fetch_assoc();
         }
 
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(-20px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
-        h2 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 30px;
-            font-size: 28px;
-        }
+        h2 { text-align: center; color: #333; margin-bottom: 30px; font-size: 28px; }
+
+        label { display: block; margin: 10px 0 4px; color: #555; font-size: 14px; font-weight: 600; }
 
         input {
             width: 100%;
             padding: 12px;
-            margin: 10px 0;
             border: 1px solid #ddd;
             border-radius: 5px;
             font-size: 16px;
@@ -85,12 +88,10 @@ $row = $result->fetch_assoc();
             font-size: 16px;
             cursor: pointer;
             transition: transform 0.2s;
-            margin-top: 10px;
+            margin-top: 15px;
         }
 
-        button:hover {
-            transform: scale(1.02);
-        }
+        button:hover { transform: scale(1.02); }
 
         .back-link {
             display: block;
@@ -100,20 +101,28 @@ $row = $result->fetch_assoc();
             text-decoration: none;
         }
 
-        .back-link:hover {
-            text-decoration: underline;
-        }
+        .back-link:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
     <div class="edit-container">
-        <h2> Editar producto</h2>
+        <h2>✏️ Editar producto</h2>
         <form action="actualizar.php" method="POST">
             <input type="hidden" name="id" value="<?php echo $row['id']; ?>">
-            <input name="nombre" value="<?php echo htmlspecialchars($row['nombre']); ?>" required>
-            <input name="precio" type="number" step="0.01" value="<?php echo $row['precio']; ?>" required>
-            <input name="stock" type="number" value="<?php echo $row['stock']; ?>" required>
-            <button type="submit"> Actualizar producto</button>
+
+            <label for="nombre">Nombre del producto</label>
+            <input type="text" id="nombre" name="nombre"
+                   value="<?php echo htmlspecialchars($row['nombre']); ?>" required>
+
+            <label for="precio">Precio</label>
+            <input type="number" id="precio" name="precio" step="0.01"
+                   value="<?php echo $row['precio']; ?>" required>
+
+            <label for="stock">Stock</label>
+            <input type="number" id="stock" name="stock"
+                   value="<?php echo $row['stock']; ?>" required>
+
+            <button type="submit">💾 Actualizar producto</button>
         </form>
         <a href="dashboard.php" class="back-link">← Volver al dashboard</a>
     </div>

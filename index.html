@@ -5,11 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar Sesión - Tiendita</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -30,22 +26,11 @@
         }
 
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(-20px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
-        h2 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 30px;
-            font-size: 28px;
-        }
+        h2 { text-align: center; color: #333; margin-bottom: 25px; font-size: 28px; }
 
         input {
             width: 100%;
@@ -76,29 +61,60 @@
             margin-top: 10px;
         }
 
-        button:hover {
-            transform: scale(1.02);
+        button:hover { transform: scale(1.02); }
+
+        .register-link {
+            display: block;
+            text-align: center;
+            margin-top: 18px;
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
         }
 
-        .footer {
-            text-align: center;
-            margin-top: 20px;
-            color: #666;
-            font-size: 12px;
+        .register-link:hover { text-decoration: underline; }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px 14px;
+            border-radius: 5px;
+            margin-bottom: 16px;
+            border-left: 4px solid #28a745;
+            font-size: 14px;
         }
+
+        .footer { text-align: center; margin-top: 20px; color: #666; font-size: 12px; }
     </style>
 </head>
 <body>
     <div class="login-container">
-        <h2>Iniciar Sesión</h2>
+        <h2>🔐 Iniciar Sesión</h2>
+
+        <!-- Mensaje de registro exitoso -->
+        <div id="msg-registro" class="success" style="display:none;">
+            ✅ ¡Cuenta creada! Ya puedes iniciar sesión.
+        </div>
+
         <form action="login.php" method="POST">
-            <input type="text" name="correo" placeholder=" Correo electrónico" required>
-            <input type="password" name="password" placeholder=" Contraseña" required>
+            <input type="text" name="correo" placeholder="✉️ Correo electrónico" required>
+            <input type="password" name="password" placeholder="🔑 Contraseña" required>
             <button type="submit">Entrar al Sistema</button>
         </form>
+
+        <a href="registro.php" class="register-link">¿No tienes cuenta? Regístrate aquí</a>
+
         <div class="footer">
             <p>Sistema de Inventario 2026</p>
         </div>
     </div>
+
+    <script>
+        // Mostrar mensaje si viene de registro exitoso
+        const params = new URLSearchParams(window.location.search);
+        if(params.get('registro') === 'exitoso') {
+            document.getElementById('msg-registro').style.display = 'block';
+        }
+    </script>
 </body>
 </html>
