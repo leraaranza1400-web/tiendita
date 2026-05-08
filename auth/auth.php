@@ -15,7 +15,7 @@ switch ($action) {
         $password = $_POST['password'] ?? '';
 
         if (!$username || !$password) {
-            jsonResponse(['ok' => false, 'msg' => 'Usuario y contraseña son requeridos.'], 422);
+            jsonResponse(['ok' => false, 'msg' => 'Usuario y contrasena son requeridos.'], 422);
         }
 
         $db   = getDB();
@@ -31,14 +31,14 @@ switch ($action) {
         $user = $stmt->fetch();
 
         if (!$user || !$user['activo']) {
-            jsonResponse(['ok' => false, 'msg' => 'Credenciales inválidas o cuenta inactiva.'], 401);
+            jsonResponse(['ok' => false, 'msg' => 'Credenciales invalidas o cuenta inactiva.'], 401);
         }
 
         if (!password_verify($password, $user['password'])) {
-            jsonResponse(['ok' => false, 'msg' => 'Credenciales inválidas.'], 401);
+            jsonResponse(['ok' => false, 'msg' => 'Credenciales invalidas.'], 401);
         }
 
-        // Regenerar ID de sesión al autenticarse
+        // Regenerar ID de sesion al autenticarse
         session_regenerate_id(true);
 
         $_SESSION['user_id']    = $user['id_usuario'];
@@ -47,7 +47,15 @@ switch ($action) {
         $_SESSION['rol_id']     = (int)$user['id_rol'];
         $_SESSION['rol_nombre'] = $user['rol_nombre'];
 
-        jsonResponse(['ok' => true, 'msg' => '¡Bienvenido, ' . $user['nombre'] . '!', 'redirect' => 'panel.php']);
+        // === CREAR COOKIES ===
+        $expiracion = time() + (86400 * 7); // 7 dias
+        setcookie('user_id',       $user['id_usuario'],                    $expiracion, '/', '', false, true);
+        setcookie('user_nombre',   $user['nombre'] . ' ' . $user['apellido'], $expiracion, '/', '', false, true);
+        setcookie('user_username', $user['username'],                      $expiracion, '/', '', false, true);
+        setcookie('user_rol',      $user['rol_nombre'],                    $expiracion, '/', '', false, true);
+        setcookie('user_logged',   'true',                                 $expiracion, '/', '', false, true);
+
+        jsonResponse(['ok' => true, 'msg' => 'Bienvenido, ' . $user['nombre'] . '!', 'redirect' => 'panel.php']);
         break;
 
     // ── REGISTRO ───────────────────────────────────────────
@@ -58,23 +66,23 @@ switch ($action) {
         $username = trim($_POST['username'] ?? '');
         $password = $_POST['password']      ?? '';
         $confirm  = $_POST['confirm']       ?? '';
-        // Rol: admin puede asignar cualquiera; registro público siempre = Empleado
+        // Rol: admin puede asignar cualquiera; registro publico siempre = Empleado
         $id_rol   = isset($_SESSION['rol_id']) && $_SESSION['rol_id'] === 1
                     ? (int)($_POST['id_rol'] ?? 2)
                     : 2;
 
-        // Validaciones básicas
+        // Validaciones basicas
         if (!$nombre || !$apellido || !$email || !$username || !$password) {
             jsonResponse(['ok' => false, 'msg' => 'Todos los campos son obligatorios.'], 422);
         }
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            jsonResponse(['ok' => false, 'msg' => 'El correo electrónico no es válido.'], 422);
+            jsonResponse(['ok' => false, 'msg' => 'El correo electronico no es valido.'], 422);
         }
         if (strlen($password) < 6) {
-            jsonResponse(['ok' => false, 'msg' => 'La contraseña debe tener al menos 6 caracteres.'], 422);
+            jsonResponse(['ok' => false, 'msg' => 'La contrasena debe tener al menos 6 caracteres.'], 422);
         }
         if ($password !== $confirm) {
-            jsonResponse(['ok' => false, 'msg' => 'Las contraseñas no coinciden.'], 422);
+            jsonResponse(['ok' => false, 'msg' => 'Las contrasenas no coinciden.'], 422);
         }
 
         $db = getDB();
@@ -83,7 +91,7 @@ switch ($action) {
         $check = $db->prepare("SELECT id_usuario FROM usuarios WHERE username = ? OR email = ?");
         $check->execute([$username, $email]);
         if ($check->fetch()) {
-            jsonResponse(['ok' => false, 'msg' => 'El usuario o correo ya está registrado.'], 409);
+            jsonResponse(['ok' => false, 'msg' => 'El usuario o correo ya esta registrado.'], 409);
         }
 
         $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
@@ -98,11 +106,18 @@ switch ($action) {
 
     // ── LOGOUT ─────────────────────────────────────────────
     case 'logout':
+        // === ELIMINAR COOKIES ===
+        setcookie('user_id',       '', time() - 3600, '/');
+        setcookie('user_nombre',   '', time() - 3600, '/');
+        setcookie('user_username', '', time() - 3600, '/');
+        setcookie('user_rol',      '', time() - 3600, '/');
+        setcookie('user_logged',   '', time() - 3600, '/');
+
         session_unset();
         session_destroy();
         header('Location: ../index.php?msg=sesion_cerrada');
         exit;
 
     default:
-        jsonResponse(['ok' => false, 'msg' => 'Acción no reconocida.'], 400);
+        jsonResponse(['ok' => false, 'msg' => 'Accion no reconocida.'], 400);
 }
